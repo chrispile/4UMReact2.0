@@ -1,0 +1,91 @@
+.container4UMs {
+  padding-top: 10px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding-right: 310px;
+  box-sizing: border-box;
+  padding-left: 15px;
+  display: block;
+}
+
+#public4UMs, #protected4UMs, #subscribed4UMs {
+  display: inline-block;
+  margin: 0 15px;
+  width: 30%;
+  background-color: #d3d3d3;
+  min-height: 100vh;
+  overflow-y: auto;
+  border-radius: 4px;
+  vertical-align: top;
+}
+
+.container4UMs ul {
+  padding: 0;
+  margin: 20px;
+}
+
+.container4UMs ul li {
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.container4UMs ul li a {
+  overflow: auto;
+}
+
+.subscribe, .unsubscribe, .request, .pending {
+  border-radius: 4px;
+  vertical-align: top;
+  float: right;
+  padding: 4px 6px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  color: #fff;
+}
+
+.subscribe {
+  background-color: #4CAF50;
+}
+
+.subscribe:hover {
+  background-color:  #45A049;
+}
+
+.unsubscribe {
+  background-color: #f4511e;
+}
+
+.unsubscribe:hover {
+  background-color: #d6481b;
+}
+
+.request {
+  background-color: #59A7C1;
+}
+
+.request:hover {
+  background-color: #40798C;
+}
+
+.pending {
+  background-color: #f49e42;
+}
+
+.pending:hover {
+  background-color: #C88237;
+}
+
+a:hover {
+  color: #356473;
+}
+
+.icon {
+  margin-left: 10px;
+}
+
+#snameTaken {
+  display: none;
+}

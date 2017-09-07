@@ -1,0 +1,158 @@
+.feed {
+    padding-top: 10px;
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+    padding-right: 310px;
+    box-sizing: border-box;
+    padding-left: 15px;
+}
+
+ul {
+    padding: 0;
+    list-style: none;
+}
+
+.post {
+    display: block;
+    min-height: 80px;
+    width: 100%;
+    float: left;
+    vertical-align: middle;
+    margin-bottom: 16px;
+}
+
+.postNum {
+    margin-top: 28px;
+    display: inline-block;
+    text-align: center;
+    font-size: 32px;
+    float: left;
+    width: 4%;
+}
+
+.scoreDiv {
+    margin: 6px;
+    display: inline-block;
+    float: left;
+    width: 6%;
+}
+
+.scoreDiv i {
+    margin: auto;
+    display: block;
+    text-align: center;
+}
+
+.scoreDiv i:hover {
+    cursor: pointer;
+}
+
+.score {
+    margin: 4px 0;
+    font-size: 26px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.postInfo {
+    display: inline-block;
+    float: left;
+    width: 86%;
+    overflow: hidden;
+    margin-left: 8px;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.title {
+    margin: 4px 0;
+    font-size: 26px;
+    overflow: hidden;
+}
+
+.postButtons {
+    list-style: none;
+    padding: 0;
+    margin-top: 4px;
+
+}
+
+.postButtons li, .deleteComment{
+    margin-right: 14px;
+    display: inline;
+    font-weight: bold;
+}
+
+.deleteComment {
+    margin-top: 14px;
+    font-size: 14px;
+}
+
+
+.postButtons li:hover, .deleteComment:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+
+.author, .forum {
+    color: #40798C;
+}
+
+.author:hover, .forum:hover {
+    color: #0B2027;
+    text-decoration: underline;
+}
+
+#userRequestsList {
+   padding: 0;
+   list-style: none;
+   margin: 5px 0 10px 0;
+}
+
+#userRequestsList label {
+    display: block;
+}
+
+.text {
+    white-space: pre-wrap;
+    margin-bottom: 10px;
+}
+
+#commentDiv {
+    margin: 0 22px;
+}
+
+#commentTextArea {
+    width: 600px;
+    height: 125px;
+    background-color: #F6F7F9;
+    border: .5px solid black;
+}
+
+.textDiv {
+     background-color: #e5e5e5;
+     padding: 12px;
+     border: .5px solid black;
+     margin: 4px 0;
+     border-radius: 6px;
+ }
+
+ .commentHeader {
+     margin-bottom: 6px;
+ }
+
+ #commentList li {
+     margin-bottom: 14px;
+ }
+
+#postNotFound {
+    color: #F0523D;
+    display: none;
+}
+
+#noRequests {
+    color: #6d6d6d;
+    display: none;
+}
