@@ -24,6 +24,7 @@ class LoginForm extends Component {
     event.preventDefault();
     fetch('/login', {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -40,13 +41,6 @@ class LoginForm extends Component {
       } else {
         window.location.href = "/home"
       }
-      console.log(responseJson);
-      // var isLoggedIn = responseJson.rows[0].exists;
-      // if(isLoggedIn) {
-      //   window.location.href = "/home"
-      // } else {
-      //   this.fail.style.display = "block";
-      // }
     })
     .catch((error) => {
       console.log(error);
@@ -117,7 +111,6 @@ class RegisterForm extends Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log(responseJson);
       if(responseJson.error) {
         if(responseJson.error === 'email_taken') {
           this.failEmail.style.display = "block";

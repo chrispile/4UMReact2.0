@@ -34,9 +34,12 @@ class PostLinkForm extends Component {
           <input type="text" name="title" maxLength="300" onChange={this.props.onChangeUrlForm} required /><br/>
           <label>choose a SUB4UM</label><br/>
           <select className="SUB4UMlist" name="sname" onChange={this.props.onChangeUrlForm} required>
-            <option value="GoT">GoT</option>
-            <option value="Gaming">Gaming</option>
-            <option value="News">News</option>
+            <option value="" selected disabled hidden></option>
+            {this.props.sub4ums.map((item, index) => (
+              <option value={item.sname} key={item.sid}>
+                {item.sname}
+              </option>
+            ))}
           </select>
           <input type="submit" value="submit" />
       </form>
@@ -48,10 +51,6 @@ class PostTextForm extends Component {
   constructor() {
     super();
     this.onSubmit = this.onSubmit.bind(this)
-  }
-
-  componentWillMount() {
-
   }
 
   onSubmit(event) {
@@ -69,11 +68,13 @@ class PostTextForm extends Component {
           <textarea type="text" maxLength="40000" name="text" onChange={this.props.onChangeTextForm}></textarea><br/>
           <label>choose a SUB4UM</label><br/>
           <select className="SUB4UMlist" name="sname" required onChange={this.props.onChangeTextForm}>
-            <option value="GoT">GoT</option>
-            <option value="Gaming">Gaming</option>
-            <option value="News">News</option>
+            <option value="" selected disabled hidden></option>
+            {this.props.sub4ums.map((item, index) => (
+              <option value={item.sname} key={item.sid}>
+                {item.sname}
+              </option>
+            ))}
           </select>
-
           <input type="submit" value="submit"/>
       </form>
     )
@@ -85,7 +86,7 @@ class MainFeedModal extends Component {
     super();
     this.state = {
       showModal: false,
-      showModal2: false
+      showModal2: false,
     }
     this.handleOpenModal = this.handleOpenModal.bind(this);
     this.handleOpenModal2 = this.handleOpenModal2.bind(this);
@@ -93,19 +94,35 @@ class MainFeedModal extends Component {
     this.handleCloseModal2 = this.handleCloseModal2.bind(this);
   }
 
-  handleOpenModal () {
+  componentDidMount() {
+    fetch('/sub4ums/subscribe', {
+      method: 'GET',
+      credentials: 'include',
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      console.log(responseJson);
+      this.setState({
+        sub4ums: responseJson
+      })
+    })
+  }
+
+  handleOpenModal() {
     this.setState({ showModal: true });
   }
 
-  handleOpenModal2 () {
+  handleOpenModal2() {
     this.setState({ showModal2: true });
   }
 
-  handleCloseModal () {
+  handleCloseModal() {
+    this.props.resetForms();
     this.setState({ showModal: false });
   }
 
-  handleCloseModal2 () {
+  handleCloseModal2() {
+    this.props.resetForms();
     this.setState({ showModal2: false });
   }
 
@@ -135,6 +152,7 @@ class MainFeedModal extends Component {
             onUrlSubmit={this.props.onUrlSubmit}
             onChangeUrlForm={this.props.onChangeUrlForm}
             closeModal={this.handleCloseModal}
+            sub4ums={this.state.sub4ums}
           />
         </ReactModal>
 
@@ -153,6 +171,7 @@ class MainFeedModal extends Component {
             onTextSubmit={this.props.onTextSubmit}
             onChangeTextForm={this.props.onChangeTextForm}
             closeModal={this.handleCloseModal2}
+            sub4ums={this.state.sub4ums}
           />
         </ReactModal>
       </div>

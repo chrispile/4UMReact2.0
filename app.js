@@ -53,22 +53,22 @@ app.use(session({
 
 app.use(function(req, res, next) {
   if (req.session && req.session.user) {
-        var queryConfig = {
-            text: "SELECT * FROM Users WHERE username=$1",
-            values: [req.session.user.username]
-        }
-        pgClient.query(queryConfig, function(err, result) {
-        if (result.rows.length != 0) {
-            req.user = result.rows[0];
-            delete req.user.password;
-            req.session.user = result.rows[0];
-            res.locals.user = result.rows[0];
-        }
-        next();
-        });
-    } else {
-        next();
+    var queryConfig = {
+      text: "SELECT * FROM Users WHERE username=$1",
+      values: [req.session.user.username]
     }
+    pgClient.query(queryConfig, function(err, result) {
+      if (result.rows.length != 0) {
+        req.user = result.rows[0];
+        delete req.user.password;
+        req.session.user = result.rows[0];
+        res.locals.user = result.rows[0];
+      }
+      next();
+    });
+  } else {
+    next();
+  }
 });
 
 app.use('/', index);

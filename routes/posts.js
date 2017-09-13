@@ -7,45 +7,45 @@ var HttpStatus = require('http-status-codes')
 
 //VOTED
 
-    //Returns all Votes rows for the logged in user.
+  //Returns all Votes rows for the logged in user.
 router.get('/voted', function(req, res, next) {
-    pgClient.query("SELECT * FROM Voted WHERE uid=$1", [res.locals.user.uid], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows);
-        }
-    })
+  pgClient.query("SELECT type, pid FROM Voted WHERE uid=$1", [res.locals.user.uid], function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows);
+    }
+  })
 });
 
     //Returns the new score after updating a Post row.
         //If the type is none, it deletes the Voted row.
         //Else, it will update or insert a Voted row and update the Post with a new score.
 router.post('/voted/:pid', function(req, res, next) {
-    var queryConfig = {};
-    if(req.body.type == "none") {
-        queryConfig.text = "DELETE FROM Voted WHERE uid=$1 AND pid=$2";
-        queryConfig.values = [res.locals.user.uid, req.params.pid];
+  var queryConfig = {};
+  if(req.body.type == "none") {
+    queryConfig.text = "DELETE FROM Voted WHERE uid=$1 AND pid=$2";
+    queryConfig.values = [res.locals.user.uid, req.params.pid];
+  } else {
+    queryConfig.text = "INSERT INTO Voted(uid, pid, type) VALUES ($1, $2, $3) ON CONFLICT(uid, pid) DO UPDATE SET type=EXCLUDED.type";
+    queryConfig.values = [res.locals.user.uid, req.params.pid, req.body.type];
+  }
+  pgClient.query(queryConfig, function(err, result) {
+    if(err) {
+      console.log(err);
     } else {
-        queryConfig.text = "INSERT INTO Voted(uid, pid, type) VALUES ($1, $2, $3) ON CONFLICT(uid, pid) DO UPDATE SET type=EXCLUDED.type";
-        queryConfig.values = [res.locals.user.uid, req.params.pid, req.body.type];
-    }
-    pgClient.query(queryConfig, function(err, result) {
+      queryConfig.text = "UPDATE Posts SET SCORE = SCORE + $1 WHERE pid=$2 RETURNING SCORE";
+      queryConfig.values = [req.body.value, req.params.pid];
+      //update score in posts tables
+      pgClient.query(queryConfig, function(err, result) {
         if(err) {
-            console.log(err);
+          console.log(err);
         } else {
-            queryConfig.text = "UPDATE Posts SET SCORE = SCORE + $1 WHERE pid=$2 RETURNING SCORE";
-            queryConfig.values = [req.body.value, req.params.pid];
-            //update score in posts tables
-            pgClient.query(queryConfig, function(err, result) {
-                if(err) {
-                    console.log(err);
-                } else {
-                    res.json(result.rows[0])
-                }
-            })
+          res.json(result.rows[0])
         }
-    });
+      })
+    }
+  });
 })
 
 //COMMENTS
@@ -141,28 +141,37 @@ router.get('/username/:username', function(req, res, next) {
 
     //Returns all rows from Posts
 router.get('/', function(req, res, next) {
-    pgClient.query("SELECT * FROM Posts", [], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows)
-        }
-    })
+  var queryConfig = {
+    text: "SELECT posts.pid, username, sname, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted \
+          FROM Posts LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $1 \
+          LEFT JOIN Comments on Posts.pid = Comments.pid \
+          GROUP BY posts.pid, voted.type \
+          ORDER BY score DESC",
+    values: [res.locals.user.uid]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+      if(err) {
+          console.log(err);
+      } else {
+          res.json(result.rows)
+      }
+  })
+
 });
 
 //Returns the inserted Posts row
 router.post('/:sname', function(req, res, next) {
-    var queryConfig = {
-        text: "INSERT INTO posts(username, sname, title, text, url) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        values: [res.locals.user.username , req.params.sname, req.body.title, req.body.text, req.body.url]
+  var queryConfig = {
+    text: "INSERT INTO posts(username, sname, title, text, url) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    values: [res.locals.user.username , req.params.sname, req.body.title, req.body.text, req.body.url]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows[0]);
     }
-    pgClient.query(queryConfig, function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows[0]);
-        }
-    });
+  });
 });
 
     //Delete a post by pid

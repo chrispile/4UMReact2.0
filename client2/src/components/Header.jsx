@@ -2,6 +2,18 @@ import React, { Component } from 'react';
 import './header.css';
 
 class Header extends Component {
+
+  logout() {
+    fetch('/logout', {
+      method: 'POST',
+      credentials: 'include',
+    })
+    .then(res => res.json())
+    .then(
+      window.location.href = "/"
+    );
+  }
+
   render() {
     return (
       <header>
@@ -11,7 +23,7 @@ class Header extends Component {
             <a href="/SUB4UM">SUB4UM</a>
             <a href="/u">PROFILE</a>
             <a href="/inbox">INBOX</a>
-            <a href="/logout">LOGOUT</a>
+            <button onClick={this.logout}>LOGOUT</button>
         </nav>
       </header>
     )

@@ -55,13 +55,15 @@ router.post('/login', function(req, res, next) {
         res.json({error: 'fail_login'});
       } else {
         req.session.user = result.rows[0];
-        console.log(req.session.user)
         res.json(result.rows[0]);
       }
     }
   });
 });
 
+router.post('/logout', requireLogin, function(req, res) {
+  req.session.reset();
+});
 
 // router.get('/inbox', requireLogin, function(req, res, next) {
 //     res.render('inbox', {title: 'Inbox', username: res.locals.user.username})
@@ -71,10 +73,7 @@ router.post('/login', function(req, res, next) {
 //     res.render('forumlist', {title: 'SUB4UM List', username: res.locals.user.username});
 // });
 //
-// router.get('/logout', requireLogin, function(req, res) {
-//     req.session.reset();
-//     res.redirect('/');
-// });
+
 
 // router.get('/s/:sname', requireLogin, function(req, res, next) {
 //     //check if sname is public, if not then check if user is subscribed

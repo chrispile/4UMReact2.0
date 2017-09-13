@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
+import update from 'immutability-helper';
 
 import './header.css';
 import './forumlist.css';
@@ -7,41 +8,23 @@ import './forumlist.css';
 import SideMenu from './SideMenu'
 import ForumListModal from './ForumListModal'
 
-var publicdummydata = [
-  {name: 'GoT', sid: 2},
-  {name: 'Gaming',sid: 4},
-  {name: 'News', sid: 6}
-]
-
-var protecteddummydata = [
-  {name: 'idk', sid: 14, type: 'pending'},
-  {name: 'LoL', sid: 34, type: 'request'}
-]
-
-var subscribeddummydata = [
-  {name: 'modlife', sid: 221, permissions: 'mod'},
-  {name: 'hearthstone', sid: 1},
-  {name: 'spop', sid: 10, permissions: 'admin'}
-]
-
 class PublicList extends Component {
-  createLi (name, sid) {
+  createLi (sname, sid) {
     return (
       <li key={sid}>
-        <Link to={'/s/' + name}>{name}</Link>
-        <button className="subscribe">subscribe</button>
+        <Link to={'/s/' + sname}>{sname}</Link>
+        <button className="subscribe" data-sid={sid} data-sname={sname} onClick={this.props.subscribeFunction}>subscribe</button>
       </li>
     )
   }
 
   render() {
-    var publicList = this.props.publicdummydata
     return (
       <div id="public4UMs">
         <h3>PUBLIC</h3>
         <ul>
-          {publicList.map((item, index) => (
-            this.createLi(item.name, item.sid)
+          {this.props.publicList.map((item, index) => (
+            this.createLi(item.sname, item.sid)
           ))}
         </ul>
       </div>
@@ -50,23 +33,28 @@ class PublicList extends Component {
 }
 
 class ProtectedList extends Component {
-  createLi (name, sid, type) {
+  createLi (sname, sid, uid) {
+    if(uid != null) {
+      var type = 'pending'
+    } else {
+      type = 'request'
+      var funct = this.props.requestFunction
+    }
     return (
       <li key={sid}>
-        <Link to={'/s/' + name}>{name}</Link>
-        <button className={type}>{type}</button>
+        <Link to={'/s/' + sname}>{sname}</Link>
+        <button className={type} data-sid={sid} data-sname={sname} onClick={funct}>{type}</button>
       </li>
     )
   }
 
   render() {
-    var protectedList = this.props.protecteddummydata
     return (
       <div id="protected4UMs">
         <h3>PROTECTED</h3>
         <ul>
-          {protectedList.map((item, index) => (
-            this.createLi(item.name, item.sid, item.type)
+          {this.props.protectedList.map((item, index) => (
+            this.createLi(item.sname, item.sid, item.uid)
           ))}
         </ul>
       </div>
@@ -75,31 +63,30 @@ class ProtectedList extends Component {
 }
 
 class SubscribedList extends Component {
-  createLi (name, sid, permissions) {
+  createLi (sname, sid, type, admin, mod) {
     var icon;
-    if(permissions === 'admin') {
+    if(admin != null) {
       icon = <i className="fa fa-key icon" aria-hidden="true"></i>
-    } else if (permissions === 'mod') {
+    } else if (mod != null) {
       icon = <i className="fa fa-shield icon" aria-hidden="true"></i>
     }
     return (
       <li key={sid}>
-        <Link to={'/s/' + name}>
-          {name}
+        <Link to={'/s/' + sname}>
+          {sname}
           {icon}
         </Link>
-        <button className="unsubscribe">unsubscibe</button>
+        <button className="unsubscribe" data-sid={sid} data-sname={sname} data-type={type} onClick={this.props.unsubscribeFunction}>unsubscibe</button>
       </li>
     )
   }
   render() {
-    var subscribedList = this.props.subscribeddummydata
     return (
       <div id="subscribed4UMs">
         <h3>SUBSCRIBED</h3>
         <ul>
-          {subscribedList.map((item, index) => (
-            this.createLi(item.name, item.sid, item.permissions)
+          {this.props.subscribedList.map((item, index) => (
+            this.createLi(item.sname, item.sid, item.type, item.admin, item.mod)
           ))}
         </ul>
       </div>
@@ -108,6 +95,147 @@ class SubscribedList extends Component {
 }
 
 class ForumList extends Component {
+  constructor() {
+    super();
+    this.state = {
+      public: [],
+      protected: [],
+      subscribed: [],
+    }
+
+    this.subscribe = this.subscribe.bind(this);
+    this.unsubscribe = this.unsubscribe.bind(this);
+    this.request = this.request.bind(this);
+  }
+
+  componentDidMount() {
+    fetch('/sub4ums/subscribelist', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState({
+        subscribed: responseJson
+      })
+    });
+
+    fetch('/sub4ums/publiclist', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState({
+        public: responseJson
+      })
+    });
+
+    fetch('/sub4ums/protectedlist', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState({
+        protected: responseJson
+      })
+    });
+  }
+
+  subscribe(event) {
+    var sid = parseInt(event.target.getAttribute('data-sid'), 10);
+    var sname = event.target.getAttribute('data-sname');
+    fetch('/sub4ums/subscribe', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sid: sid,
+        sname: sname
+      })
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      var index = this.state.public.findIndex(sub4um => sub4um.sid === sid);
+      responseJson.type = 'public';
+      this.setState({
+        public: update(this.state.public, {$splice: [[index, 1]]}),
+        subscribed: update(this.state.subscribed, {$push: [responseJson]})
+      })
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  }
+
+  unsubscribe(event) {
+    var sid = parseInt(event.target.getAttribute('data-sid'), 10);
+    var sname = event.target.getAttribute('data-sname');
+    var type = event.target.getAttribute('data-type');
+    fetch('/sub4ums/subscribe', {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sid: sid,
+      })
+    })
+    .then(() => {
+      var index = this.state.subscribed.findIndex(sub4um => sub4um.sid === sid);
+      this.setState({
+        subscribed: update(this.state.subscribed, {$splice: [[index, 1]]}),
+      })
+      console.log(type);
+      if(type === 'public') {
+        console.log('hi');
+        this.setState({
+          public: update(this.state.public, {$push: [{sid: sid, sname: sname}]})
+        })
+      } else if(type === 'protected') {
+        this.setState({
+          protected: update(this.state.protected, {$push: [{sid: sid, sname: sname, uid: null}]})
+        })
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  }
+
+  request(event) {
+    var sid = parseInt(event.target.getAttribute('data-sid'), 10);
+    var sname = event.target.getAttribute('data-sname');
+    fetch('/sub4ums/request', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sid: sid,
+        sname: sname
+      })
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      var index = this.state.protected.findIndex(sub4um => sub4um.sid === sid);
+      this.setState({
+        protected: update(this.state.protected, {[index]: {uid: {$set: responseJson.uid}}}),
+      })
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  }
+
   render() {
     return (
       <div className="container">
@@ -120,9 +248,9 @@ class ForumList extends Component {
           <ForumListModal/>
         </SideMenu>
         <div className="container4UMs">
-          <PublicList publicdummydata={publicdummydata}/>
-          <ProtectedList protecteddummydata={protecteddummydata}/>
-          <SubscribedList subscribeddummydata={subscribeddummydata}/>
+          <PublicList publicList={this.state.public} subscribeFunction={this.subscribe}/>
+          <ProtectedList protectedList={this.state.protected} requestFunction={this.request}/>
+          <SubscribedList subscribedList={this.state.subscribed} unsubscribeFunction={this.unsubscribe}/>
         </div>
       </div>
     )

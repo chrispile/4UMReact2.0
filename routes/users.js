@@ -46,18 +46,17 @@ router.post('/', function(req, res, next) {
         if(err) {
             if(err.constraint == 'users_username_key') {
               res.json({error: 'username_taken'})
-                // res.status(HttpStatus.CONFLICT).render('register', {title: 'Username taken', email:'', username:'true'});
+                // res.status(HttpStatus.CONFLICT)
             }
             else if(err.constraint == 'users_email_key') {
               res.json({error: 'email_taken'})
-                // res.status(HttpStatus.CONFLICT).render('register', {title: 'Email taken', email:'true', username:''});
+                // res.status(HttpStatus.CONFLICT)
             } else {
                 console.log(err);
             }
         }
         else {
           res.json({success: true});
-            // res.render('login', { title: 'Login', fail: ''});
         }
     });
 });

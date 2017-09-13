@@ -23,49 +23,67 @@ class MainFeed extends Component {
         sname: ''
       }
     }
+    this.resetForms = this.resetForms.bind(this);
     this.sortScore = this.sortScore.bind(this);
     this.sortDate = this.sortDate.bind(this);
     this.submitTextForm = this.submitTextForm.bind(this);
     this.onChangeTextForm = this.onChangeTextForm.bind(this);
     this.submitUrlForm = this.submitUrlForm.bind(this);
     this.onChangeUrlForm = this.onChangeUrlForm.bind(this);
+    this.vote = this.vote.bind(this);
   }
 
   componentDidMount() {
-    fetch('/posts')
-      .then(res => res.json())
-      .then(posts => this.setState({posts}))
+    fetch('/posts', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(res => res.json())
+    .then(posts => this.setState({posts}))
   }
 
   componentWillMount() {
     this.sortScore();
   }
 
+  resetForms() {
+    this.setState({
+      textForm: {
+        title: '',
+        text: '',
+        sname: ''
+      },
+      urlForm: {
+        url: '',
+        title: '',
+        sname: ''
+      }
+    });
+  }
+
   submitTextForm() {
-    // api call here
-    var dummyTimestamp = new Date().toLocaleString();
-    var dummyUsername = 'DummyUser'
-    var dummyPID = Math.floor(Math.random() * 60);
-    var newPost = {
-      title: this.state.textForm.title,
-      text: this.state.textForm.text,
-      sname: this.state.textForm.sname,
-      timestamp: dummyTimestamp,
-      username: dummyUsername,
-      pid: dummyPID,
-      score: 0
-    }
-
-    // fetch("/posts/" + this.state.textForm.sname, {
-    //   method: 'POST',
-    //   body: JSON.stringify({
-    //
-    //   })
-    // })
-
-    this.setState((prevState) => {
-      posts: prevState.posts.push(newPost)
+    fetch("/posts/" + this.state.textForm.sname, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: this.state.textForm.title,
+        text: this.state.textForm.text,
+        url: ''
+      })
     })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState((prevState) => {
+        prevState.posts.push(responseJson)
+      })
+    })
+    .catch((error) => {
+      console.log(error);
+    });
   }
 
   onChangeTextForm(event) {
@@ -81,22 +99,28 @@ class MainFeed extends Component {
   }
 
   submitUrlForm() {
-    // api call here
-    var dummyTimestamp = new Date().toLocaleString();
-    var dummyUsername = 'DummyUser'
-    var dummyPID = Math.floor(Math.random() * 60);
-    var newPost = {
-      title: this.state.urlForm.title,
-      url: this.state.urlForm.url,
-      sname: this.state.urlForm.sname,
-      timestamp: dummyTimestamp,
-      username: dummyUsername,
-      pid: dummyPID,
-      score: 0
-    }
-    this.setState((prevState) => {
-      posts: prevState.posts.push(newPost)
+    fetch("/posts/" + this.state.urlForm.sname, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: this.state.urlForm.title,
+        text: '',
+        url: this.state.urlForm.url
+      })
     })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState((prevState) => {
+        prevState.posts.push(responseJson)
+      })
+    })
+    .catch((error) => {
+      console.log(error);
+    });
   }
 
   onChangeUrlForm(event) {
@@ -135,6 +159,30 @@ class MainFeed extends Component {
     }))
   }
 
+  vote(type, value, voted, pid) {
+    fetch('/posts/voted/' + pid, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: type,
+        value: value
+      })
+    })
+    var index = this.state.posts.findIndex(post => post.pid === pid);
+    var newScore = this.state.posts[index].score + value
+    this.setState({
+      posts: [
+        ...this.state.posts.slice(0, index),
+        Object.assign({}, this.state.posts[index], {score: newScore, voted: type}),
+        ...this.state.posts.slice(index+1)
+      ]
+    })
+  }
+
   render() {
     if(this.state.posts.length === 0) {
       var noPosts = <div id="noPosts">There are no posts to display. Subscribe to more SUB4UMs or create your own post!</div>
@@ -159,7 +207,7 @@ class MainFeed extends Component {
       <div className="container">
         <SideMenu title="Welcome to 4UM">
           <MainFeedModal
-            textForm={this.textForm}
+            resetForms={this.resetForms}
             onTextSubmit={this.submitTextForm}
             onChangeTextForm={this.onChangeTextForm}
             onUrlSubmit={this.submitUrlForm}
@@ -174,7 +222,6 @@ class MainFeed extends Component {
           </div>
           {noPosts}
           <ol className="postList">
-            {/*Load all Posts here*/}
             {this.state.posts.map((item, index) => (
               <Post
                 key={item.pid}
@@ -186,9 +233,10 @@ class MainFeed extends Component {
                 username={item.username}
                 sname={item.sname}
                 timestamp={item.timestamp}
-                commentCount="0"
-              ></Post>
-              //  {/* Change API later to query for commentCount*/}
+                commentCount={item.commentcount}
+                voteFunction={this.vote}
+                voted={item.voted}
+              />
             ))}
           </ol>
         </div>
