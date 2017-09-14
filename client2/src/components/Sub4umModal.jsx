@@ -32,15 +32,6 @@ class PostLinkForm extends Component {
           <input type="url" name="url" onChange={this.props.onChangeUrlForm} onBlur={this.checkUrl} required /><br/>
           <label >title</label>
           <input type="text" name="title" maxLength="300" onChange={this.props.onChangeUrlForm} required /><br/>
-          <label>choose a SUB4UM</label><br/>
-          <select className="SUB4UMlist" name="sname" onChange={this.props.onChangeUrlForm} required>
-            <option value="" selected disabled hidden></option>
-            {this.props.sub4ums.map((item, index) => (
-              <option value={item.sname} key={item.sid}>
-                {item.sname}
-              </option>
-            ))}
-          </select>
           <input type="submit" value="submit" />
       </form>
     )
@@ -66,22 +57,13 @@ class PostTextForm extends Component {
           <input type="text" maxLength="300" name="title" required onChange={this.props.onChangeTextForm}/><br/>
           <label>text (optional)</label>
           <textarea type="text" maxLength="40000" name="text" onChange={this.props.onChangeTextForm}></textarea><br/>
-          <label>choose a SUB4UM</label><br/>
-          <select className="SUB4UMlist" name="sname" required onChange={this.props.onChangeTextForm}>
-            <option value="" selected disabled hidden></option>
-            {this.props.sub4ums.map((item, index) => (
-              <option value={item.sname} key={item.sid}>
-                {item.sname}
-              </option>
-            ))}
-          </select>
           <input type="submit" value="submit"/>
       </form>
     )
   }
 }
 
-class MainFeedModal extends Component {
+class Sub4umModal extends Component {
   constructor() {
     super();
     this.state = {
@@ -92,19 +74,6 @@ class MainFeedModal extends Component {
     this.handleOpenModal2 = this.handleOpenModal2.bind(this);
     this.handleCloseModal = this.handleCloseModal.bind(this);
     this.handleCloseModal2 = this.handleCloseModal2.bind(this);
-  }
-
-  componentDidMount() {
-    fetch('/sub4ums/subscribe', {
-      method: 'GET',
-      credentials: 'include',
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setState({
-        sub4ums: responseJson
-      })
-    })
   }
 
   handleOpenModal() {
@@ -138,7 +107,7 @@ class MainFeedModal extends Component {
            overlayClassName="modalBg"
            style={{
              content: {
-               height: '40%'
+               height: '35%'
              }
            }}
         >
@@ -146,12 +115,11 @@ class MainFeedModal extends Component {
           <div onClick={this.handleCloseModal}>
               <i className="fa fa-times fa-lg modalClose" aria-hidden="true"></i>
           </div>
-          <h2>Submit link to 4UM</h2>
+          <h2>Submit link post</h2>
           <PostLinkForm
             onUrlSubmit={this.props.onUrlSubmit}
             onChangeUrlForm={this.props.onChangeUrlForm}
             closeModal={this.handleCloseModal}
-            sub4ums={this.state.sub4ums}
           />
         </ReactModal>
 
@@ -161,16 +129,20 @@ class MainFeedModal extends Component {
            className="modalContent"
            overlayClassName="modalBg"
            contentLabel="Post Text Form Modal"
+           style={{
+             content: {
+               height: '40%'
+             }
+           }}
         >
           <div onClick={this.handleCloseModal2}>
               <i className="fa fa-times fa-lg modalClose" aria-hidden="true"></i>
           </div>
-          <h2>Submit a text post to 4UM</h2>
+          <h2>Submit a text post</h2>
           <PostTextForm
             onTextSubmit={this.props.onTextSubmit}
             onChangeTextForm={this.props.onChangeTextForm}
             closeModal={this.handleCloseModal2}
-            sub4ums={this.state.sub4ums}
           />
         </ReactModal>
       </div>
@@ -178,4 +150,4 @@ class MainFeedModal extends Component {
   }
 }
 
-export default MainFeedModal;
+export default Sub4umModal;

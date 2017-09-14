@@ -5,6 +5,26 @@ var pgClient = pgSetup.getClient();
 var errorCodes = require('../errorCodes');
 var HttpStatus = require('http-status-codes')
 
+router.get('/pid/:pid', function(req, res, next) {
+  var queryConfig = {
+    text: "SELECT username, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted \
+          FROM Posts \
+          LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $1 \
+          LEFT JOIN Comments on Posts.pid = Comments.pid \
+          WHERE posts.pid = $2 \
+          GROUP BY posts.pid, voted.type",
+    values: [res.locals.user.uid, req.params.pid]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows[0]);
+    }
+  })
+})
+
+
 //VOTED
 
   //Returns all Votes rows for the logged in user.
@@ -18,9 +38,9 @@ router.get('/voted', function(req, res, next) {
   })
 });
 
-    //Returns the new score after updating a Post row.
-        //If the type is none, it deletes the Voted row.
-        //Else, it will update or insert a Voted row and update the Post with a new score.
+//Returns the new score after updating a Post row.
+    //If the type is none, it deletes the Voted row.
+    //Else, it will update or insert a Voted row and update the Post with a new score.
 router.post('/voted/:pid', function(req, res, next) {
   var queryConfig = {};
   if(req.body.type == "none") {
@@ -65,17 +85,6 @@ router.get('/comments/:pid', function(req, res, next) {
     })
 })
 
-//Returns the total number of comments for a Post.
-router.get('/comments/:pid/count', function(req, res, next) {
-    pgClient.query("SELECT COUNT(*) FROM comments WHERE pid=$1", [req.params.pid], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows[0]);
-        }
-    })
-})
-
 //Returns the inserted Comment
 router.post('/comments/:pid', function(req, res, next) {
     var queryConfig = {
@@ -114,13 +123,22 @@ router.delete('/comments/:cid', function(req, res, next) {
 
     //Get all posts of a SUB4UM by sname
 router.get('/:sname', function(req, res, next) {
-    pgClient.query("SELECT * FROM posts WHERE sname=$1", [req.params.sname], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows);
-        }
-    })
+  var queryConfig = {
+    text: "SELECT posts.pid, username, posts.sname, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted \
+          FROM Posts LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $1 \
+          LEFT JOIN Comments on Posts.pid = Comments.pid \
+          WHERE posts.sname=$2 \
+          GROUP BY posts.pid, voted.type \
+          ORDER BY score DESC",
+    values: [res.locals.user.uid, req.params.sname]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+      if(err) {
+          console.log(err);
+      } else {
+          res.json(result.rows)
+      }
+  })
 });
 
     //Get all posts from a User
@@ -142,8 +160,9 @@ router.get('/username/:username', function(req, res, next) {
     //Returns all rows from Posts
 router.get('/', function(req, res, next) {
   var queryConfig = {
-    text: "SELECT posts.pid, username, sname, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted \
-          FROM Posts LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $1 \
+    text: "SELECT posts.pid, username, posts.sname, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted \
+          FROM Posts INNER JOIN Subscribes on posts.sname=subscribes.sname AND subscribes.uid = $1 \
+          LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $1 \
           LEFT JOIN Comments on Posts.pid = Comments.pid \
           GROUP BY posts.pid, voted.type \
           ORDER BY score DESC",
@@ -156,7 +175,6 @@ router.get('/', function(req, res, next) {
           res.json(result.rows)
       }
   })
-
 });
 
 //Returns the inserted Posts row

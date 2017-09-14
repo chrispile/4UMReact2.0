@@ -4,132 +4,52 @@ import update from 'immutability-helper';
 import './header.css';
 import './mainfeed.css';
 
+
 import SideMenu from './SideMenu'
 import Post from './Post'
-import MainFeedModal from './MainFeedModal'
+import Sub4umModal from './Sub4umModal'
 
-class MainFeed extends Component {
+class Sub4um extends Component {
   constructor(props) {
     super(props)
     this.state = {
       sortedByScore: true,
       posts: [],
+      forum: {},
       textForm: {
         title: '',
         text: '',
-        sname: ''
       },
       urlForm: {
         url: '',
         title: '',
-        sname: ''
       }
     }
-    this.resetForms = this.resetForms.bind(this);
+
     this.sortScore = this.sortScore.bind(this);
     this.sortDate = this.sortDate.bind(this);
+    this.vote = this.vote.bind(this);
+    this.resetForms = this.resetForms.bind(this);
     this.submitTextForm = this.submitTextForm.bind(this);
     this.onChangeTextForm = this.onChangeTextForm.bind(this);
     this.submitUrlForm = this.submitUrlForm.bind(this);
     this.onChangeUrlForm = this.onChangeUrlForm.bind(this);
-    this.vote = this.vote.bind(this);
   }
 
   componentDidMount() {
-    fetch('/posts', {
+    fetch('/posts/' + this.props.sname, {
       method: 'GET',
       credentials: 'include'
     })
     .then(res => res.json())
     .then(posts => this.setState({posts}))
-  }
 
-  resetForms() {
-    this.setState({
-      textForm: {
-        title: '',
-        text: '',
-        sname: ''
-      },
-      urlForm: {
-        url: '',
-        title: '',
-        sname: ''
-      }
-    });
-  }
-
-  submitTextForm() {
-    fetch("/posts/" + this.state.textForm.sname, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: this.state.textForm.title,
-        text: this.state.textForm.text,
-        url: ''
-      })
+    fetch('/sub4ums/sname/' + this.props.sname, {
+      method: 'GET',
+      credentials: 'include'
     })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setState((prevState) => {
-        prevState.posts.push(responseJson)
-      })
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-  }
-
-  onChangeTextForm(event) {
-    var name = event.target.name;
-    var value = event.target.value;
-    this.setState({
-      textForm: update(this.state.textForm, {[name]: {$set: value}})
-    })
-  }
-
-  submitUrlForm() {
-    fetch("/posts/" + this.state.urlForm.sname, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: this.state.urlForm.title,
-        text: '',
-        url: this.state.urlForm.url
-      })
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setState((prevState) => {
-        prevState.posts.push(responseJson)
-      })
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-  }
-
-  onChangeUrlForm(event) {
-    var name = event.target.name;
-    var value = event.target.value;
-    if(name === 'url') {
-      var string = event.target.value;
-      if (!~string.indexOf("http")) {
-        string = "http://" + string;
-      }
-      value = string;
-    }
-    this.setState({
-      urlForm: update(this.state.urlForm, {[name]: {$set: value}})
-    })
+    .then(res => res.json())
+    .then(forum =>this.setState({forum}))
   }
 
   sortScore() {
@@ -180,6 +100,92 @@ class MainFeed extends Component {
     })
   }
 
+  resetForms() {
+    this.setState({
+      textForm: {
+        title: '',
+        text: '',
+      },
+      urlForm: {
+        url: '',
+        title: '',
+      }
+    });
+  }
+
+  submitTextForm() {
+    fetch("/posts/" + this.props.sname, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: this.state.textForm.title,
+        text: this.state.textForm.text,
+        url: ''
+      })
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState((prevState) => {
+        prevState.posts.push(responseJson)
+      })
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  }
+
+  onChangeTextForm(event) {
+    var name = event.target.name;
+    var value = event.target.value;
+    this.setState({
+      textForm: update(this.state.textForm, {[name]: {$set: value}})
+    })
+  }
+
+  submitUrlForm() {
+    fetch("/posts/" + this.props.sname, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: this.state.urlForm.title,
+        text: '',
+        url: this.state.urlForm.url
+      })
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState((prevState) => {
+        prevState.posts.push(responseJson)
+      })
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  }
+
+  onChangeUrlForm(event) {
+    var name = event.target.name;
+    var value = event.target.value;
+    if(name === 'url') {
+      var string = event.target.value;
+      if (!~string.indexOf("http")) {
+        string = "http://" + string;
+      }
+      value = string;
+    }
+    this.setState({
+      urlForm: update(this.state.urlForm, {[name]: {$set: value}})
+    })
+  }
+
   render() {
     if(this.state.posts.length === 0) {
       var noPosts = <div id="noPosts">There are no posts to display. Subscribe to more SUB4UMs or create your own post!</div>
@@ -200,10 +206,14 @@ class MainFeed extends Component {
       scoreStyle = unselectedStyle;
       dateStyle = selectedStyle;
     }
+
     return (
       <div className="container">
-        <SideMenu title="Welcome to 4UM">
-          <MainFeedModal
+        <SideMenu title={this.props.sname}>
+          <h6><i>{this.state.forum.type}</i></h6>
+          <h6>{this.state.forum.title}</h6>
+          <p>{this.state.forum.description}</p>
+          <Sub4umModal
             resetForms={this.resetForms}
             onTextSubmit={this.submitTextForm}
             onChangeTextForm={this.onChangeTextForm}
@@ -211,7 +221,6 @@ class MainFeed extends Component {
             onChangeUrlForm={this.onChangeUrlForm}
           />
         </SideMenu>
-
         <div className="feed">
           <div id="sort">
             <button className="sortBtn" id="topBtn" onClick={this.sortScore} style={scoreStyle}>Top</button>
@@ -242,4 +251,4 @@ class MainFeed extends Component {
   }
 }
 
-export default MainFeed;
+export default Sub4um

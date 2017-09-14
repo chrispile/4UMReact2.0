@@ -42,7 +42,7 @@ class ProtectedList extends Component {
     }
     return (
       <li key={sid}>
-        <Link to={'/s/' + sname}>{sname}</Link>
+        <Link to="/home" >{sname}</Link>
         <button className={type} data-sid={sid} data-sname={sname} onClick={funct}>{type}</button>
       </li>
     )
@@ -101,11 +101,22 @@ class ForumList extends Component {
       public: [],
       protected: [],
       subscribed: [],
+      createForm: {
+        name: '',
+        title: '',
+        description: '',
+        type: ''
+      },
+      failCreateForm: false,
+      closeCreateFormModal: false
     }
 
     this.subscribe = this.subscribe.bind(this);
     this.unsubscribe = this.unsubscribe.bind(this);
     this.request = this.request.bind(this);
+    this.resetForms = this.resetForms.bind(this);
+    this.onChangeCreateForm = this.onChangeCreateForm.bind(this);
+    this.submitCreateForm = this.submitCreateForm.bind(this);
   }
 
   componentDidMount() {
@@ -192,9 +203,7 @@ class ForumList extends Component {
       this.setState({
         subscribed: update(this.state.subscribed, {$splice: [[index, 1]]}),
       })
-      console.log(type);
       if(type === 'public') {
-        console.log('hi');
         this.setState({
           public: update(this.state.public, {$push: [{sid: sid, sname: sname}]})
         })
@@ -236,6 +245,62 @@ class ForumList extends Component {
     });
   }
 
+  resetForms() {
+    this.setState({
+      createForm: {
+        name: '',
+        title: '',
+        description: '',
+        type: ''
+      }
+    });
+  }
+
+  onChangeCreateForm(event) {
+    var name = event.target.name;
+    var value = event.target.value;
+    this.setState({
+      createForm: update(this.state.createForm, {[name]: {$set: value}}),
+      closeCreateFormModal: false
+    })
+  }
+
+  submitCreateForm() {
+    fetch("/sub4ums", {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: this.state.createForm.type,
+        sname: this.state.createForm.name,
+        title: this.state.createForm.title,
+        description: this.state.createForm.description
+      })
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if(responseJson.error) {
+        this.setState({
+          failCreateForm: true
+        })
+      } else {
+        this.resetForms();
+        this.setState({
+          subscribed: update(this.state.subscribed, {$push: [responseJson]}),
+          closeCreateFormModal: true,
+          failCreateForm: false,
+        })
+      }
+
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  }
+
   render() {
     return (
       <div className="container">
@@ -245,7 +310,13 @@ class ForumList extends Component {
           <p>Protected SUB4UMs must be requested to join and approved by an Admin<i className="fa fa-key icon" aria-hidden="true"></i> or Moderator<i className="fa fa-shield icon" aria-hidden="true"></i>.</p>
           <p>Private SUB4UMs are not visible on this page. To join, you must receive a unique access code or direct invite from your inbox.</p>
           <p>Users can even start their own SUB4UM and become the Admin<i className="fa fa-key icon" aria-hidden="true"></i>.</p>
-          <ForumListModal/>
+          <ForumListModal
+            fail={this.state.failCreateForm}
+            closeCreateFormModal={this.state.closeCreateFormModal}
+            onChangeCreateForm={this.onChangeCreateForm}
+            submitCreateForm={this.submitCreateForm}
+            resetForms={this.resetForms}
+          />
         </SideMenu>
         <div className="container4UMs">
           <PublicList publicList={this.state.public} subscribeFunction={this.subscribe}/>

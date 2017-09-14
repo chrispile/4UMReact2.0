@@ -289,13 +289,13 @@ router.get('/qualified/:sname', function(req, res, next) {
 
     //Returns a SUB4UM by SNAME
 router.get('/sname/:sname', function(req, res, next) {
-    pgClient.query("SELECT * FROM sub4ums WHERE sname=$1", [req.params.sname], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows);
-        }
-    })
+  pgClient.query("SELECT sid, description, sname, title, type FROM sub4ums WHERE sname=$1", [req.params.sname], function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows[0]);
+    }
+  })
 });
 
     //Returns ALL sub4ums
@@ -313,45 +313,52 @@ router.get('/', function(req, res, next) {
     // Posts new SUB4UM and returns an array with the inserted rows for new forum and new admin.
     //Returns an error if the sname sname is taken.
 router.post('/', function(req, res, next) {
-    if(req.body.type == 'private') {
-        var accesscode = '';
-        var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for (var i = 8; i > 0; --i) accesscode += chars[Math.round(Math.random() * (chars.length - 1))];
+  if(req.body.type == 'private') {
+    var accesscode = '';
+    var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (var i = 8; i > 0; --i) accesscode += chars[Math.round(Math.random() * (chars.length - 1))];
+  }
+  var queryConfig = {
+    text: "INSERT INTO sub4ums(sname, title, description, type, accesscode) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    values: [req.body.sname, req.body.title, req.body.description, req.body.type, accesscode]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+    if(err) {
+      if(err.constraint == 'sub4ums_sname_key') {
+        res.json({error: errorCodes.SnameTaken});
+      } else {
+        console.log(err);
+      }
     }
-    var queryConfig = {
-        text: "INSERT INTO sub4ums(sname, title, description, type, accesscode) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        values: [req.body.sname, req.body.title, req.body.description, req.body.type, accesscode]
-    }
-    pgClient.query(queryConfig, function(err, result) {
+    else {
+      forum = result.rows[0];
+      var sid = forum.sid;
+      queryConfig = {
+        text: 'INSERT INTO subscribes(uid, sid, sname) VALUES ($1, $2, $3)',
+        values: [res.locals.user.uid, sid, req.body.sname]
+      }
+      pgClient.query( queryConfig, function(err, result) {
         if(err) {
-            if(err.constraint == 'sub4ums_sname_key') {
-                res.json({error: errorCodes.SnameTaken});
+            console.log(err);
+        } else {
+          pgClient.query('INSERT INTO Admins(uid, sid) VALUES ($1, $2) RETURNING *', [res.locals.user.uid, sid], function(err, result) {
+            if(err) {
+              console.log(err)
             } else {
-                console.log(err);
+              var temp = {
+                admin: result.rows[0].uid,
+                mod: null,
+                sid: forum.sid,
+                sname: forum.sname,
+                type: forum.type
+              }
+              res.json(temp);
             }
+          })
         }
-        else {
-            forum = result.rows[0];
-            var sid = forum.sid;
-            queryConfig = {
-                text: 'INSERT INTO subscribes(uid, sid, sname) VALUES ($1, $2, $3)',
-                values: [res.locals.user.uid, sid, req.body.sname]
-            }
-            pgClient.query( queryConfig, function(err, result) {
-                if(err) {
-                    console.log(err);
-                } else {
-                    pgClient.query('INSERT INTO Admins(uid, sid) VALUES ($1, $2) RETURNING *', [res.locals.user.uid, sid], function(err, result) {
-                        if(err) {
-                            console.log(err)
-                        } else {
-                            res.json([forum, result.rows[0]]);
-                        }
-                    })
-                }
-            })
-        }
-    });
+      })
+    }
+  });
 });
 
     // Deletes a SUB4UM by sname

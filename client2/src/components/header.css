@@ -51,11 +51,11 @@ ul {
   float: right;
 }
 
-.menu a, .menu div{
-    padding: 0 10px;
+.menu a, .menu button{
+  padding: 0 10px;
 }
 
-.menu a:hover, .menu div:hover {
+.menu a:hover, .menu button:hover {
   color: #C5CAE9;
 }
 

@@ -60,6 +60,15 @@ class Post extends Component {
       downvoteColor = '#000'
     }
 
+    if(this.props.showText) {
+      var showText = <div className="text textDiv">{this.props.text}</div>
+    }
+    if(this.props.url !== '') {
+      var url = this.props.url
+    } else {
+      url = "/s/" + this.props.sname + "/" + this.props.pid
+    }
+
     return (
       <li className="post" key={this.props.pid}>
         <div className="postNum">{this.props.postNum}</div>
@@ -70,13 +79,14 @@ class Post extends Component {
         </div>
         <div className="postInfo">
           <div className="title">
-            <a href={this.props.url}>{this.props.title}</a>
+            <a href={url}>{this.props.title}</a>
           </div>
           <div className="tagline">
               submitted <TimeAgo date={(this.props.timestamp)} live={false}/> by&nbsp;
-              <a href={"/u/" + this.props.username} className="author">{this.props.username}</a> to&nbsp; 
+              <a href={"/u/" + this.props.username} className="author">{this.props.username}</a> to&nbsp;
               <a href={"/s/" + this.props.sname} className="forum">{this.props.sname}</a>
           </div>
+          {showText}
           <ul className="postButtons">
             <li className="comments">
               <a href={"/s/" + this.props.sname + "/" + this.props.pid}>{this.props.commentCount} comments</a>

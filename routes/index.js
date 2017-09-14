@@ -10,13 +10,6 @@ router.get('/',  function(req, res, next) {
   res.render('login', { title: 'Login', fail: ''});
 });
 
-// router.get('/register', function(req, res, next) {
-//     res.render('register', {title: 'Register', email:'', username:''});
-// })
-//
-// router.get('/recover', function(req, res, next) {
-//     res.render('recover', {title: 'Recover', fail: ''});
-// })
 
 // router.get("/r/:token", function(req, res, next) {
 //     pgClient.query("SELECT EXISTS(SELECT 1 FROM Resets WHERE token=$1)", [req.params.token], function(err, result) {
@@ -31,14 +24,6 @@ router.get('/',  function(req, res, next) {
 //         }
 //     })
 // })
-
-router.get('/login', function(req, res, next) {
-  if (!req.user) {
-    res.json({isLoggedIn: false});
-  } else {
-    res.json({isLoggedIn: true});
-  }
-})
 
 router.post('/login', function(req, res, next) {
   var encryptPass = sha1.hash(req.body.password);
@@ -61,19 +46,16 @@ router.post('/login', function(req, res, next) {
   });
 });
 
-router.post('/logout', requireLogin, function(req, res) {
-  req.session.reset();
+router.get('/logout', function(req, res) {
+  console.log('hi');
+  req.session.destroy()
+  res.sendStatus(200)
 });
 
 // router.get('/inbox', requireLogin, function(req, res, next) {
 //     res.render('inbox', {title: 'Inbox', username: res.locals.user.username})
 // })
 //
-// router.get('/SUB4UM', requireLogin, function(req, res, next) {
-//     res.render('forumlist', {title: 'SUB4UM List', username: res.locals.user.username});
-// });
-//
-
 
 // router.get('/s/:sname', requireLogin, function(req, res, next) {
 //     //check if sname is public, if not then check if user is subscribed

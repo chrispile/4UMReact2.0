@@ -5,8 +5,8 @@ class Header extends Component {
 
   logout() {
     fetch('/logout', {
-      method: 'POST',
-      credentials: 'include',
+      method: 'GET',
+      credentials: 'include'
     })
     .then(res => res.json())
     .then(
