@@ -72,40 +72,40 @@ router.post('/voted/:pid', function(req, res, next) {
 
     //Returns all comments of a Post by pid.
 router.get('/comments/:pid', function(req, res, next) {
-    var queryConfig = {
-        text: "SELECT comments.cid, text, comments.timestamp, users.username as username FROM comments LEFT JOIN users ON comments.uid=users.uid WHERE pid=$1 ORDER BY timestamp",
-        values: [req.params.pid]
+  var queryConfig = {
+    text: "SELECT comments.cid, text, comments.timestamp, users.username as username FROM comments LEFT JOIN users ON comments.uid=users.uid WHERE pid=$1 ORDER BY timestamp DESC",
+    values: [req.params.pid]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows);
     }
-    pgClient.query(queryConfig, function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows);
-        }
-    })
+  })
 })
 
 //Returns the inserted Comment
 router.post('/comments/:pid', function(req, res, next) {
-    var queryConfig = {
-        text: "INSERT INTO comments(uid, pid, text) VALUES ($1, $2, $3) RETURNING *",
-        values: [res.locals.user.uid, req.params.pid, req.body.text]
+  var queryConfig = {
+    text: "INSERT INTO comments(uid, pid, text) VALUES ($1, $2, $3) RETURNING *",
+    values: [res.locals.user.uid, req.params.pid, req.body.text]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+    if(err) {
+      if(err.constraint == 'comments_pid_fkey') {
+        res.json({error: errorCodes.PostNotFound}).status(HttpStatus.NOT_FOUND); //TEST THIS
+      } else {
+        console.log(err);
+      }
+    } else {
+      var comment = result.rows[0];
+      delete comment.uid;
+      delete comment.pid;
+      comment.username = res.locals.user.username;
+      res.json(comment);
     }
-    pgClient.query(queryConfig, function(err, result) {
-        if(err) {
-            if(err.constraint == 'comments_pid_fkey') {
-                res.json({error: errorCodes.PostNotFound}).status(HttpStatus.NOT_FOUND); //TEST THIS
-            } else {
-                console.log(err);
-            }
-        } else {
-            var comment = result.rows[0];
-            delete comment.uid;
-            delete comment.pid;
-            comment.username = res.locals.user.username;
-            res.json(comment);
-        }
-    });
+  });
 })
 
     //Deletes a Comment row by cid
@@ -124,27 +124,45 @@ router.delete('/comments/:cid', function(req, res, next) {
     //Get all posts of a SUB4UM by sname
 router.get('/:sname', function(req, res, next) {
   var queryConfig = {
-    text: "SELECT posts.pid, username, posts.sname, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted \
+    text: "SELECT posts.pid, username, posts.sname, posts.title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted, \
+          admins.uid as isAdmin, moderators.uid as isMod \
           FROM Posts LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $1 \
           LEFT JOIN Comments on Posts.pid = Comments.pid \
+          LEFT JOIN Sub4ums on posts.sname = sub4ums.sname \
+          LEFT JOIN Admins on admins.sid = sub4ums.sid AND Admins.uid = $1 \
+          LEFT JOIN Moderators on moderators.sid = sub4ums.sid AND Moderators.uid = $1 \
           WHERE posts.sname=$2 \
-          GROUP BY posts.pid, voted.type \
+          GROUP BY posts.pid, voted.type, admins.uid, moderators.uid \
           ORDER BY score DESC",
     values: [res.locals.user.uid, req.params.sname]
   }
   pgClient.query(queryConfig, function(err, result) {
-      if(err) {
-          console.log(err);
-      } else {
-          res.json(result.rows)
-      }
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows)
+    }
   })
 });
 
     //Get all posts from a User
 router.get('/username/:username', function(req, res, next) {
     queryConfig = {
-        text: "SELECT * FROM posts WHERE username=$1 AND sname in (SELECT sname FROM sub4ums WHERE type='public' OR EXISTS(SELECT * FROM subscribes WHERE uid=$2 AND subscribes.sname=sub4ums.sname))",
+        text: "SELECT posts.pid, posts.username, posts.sname, posts.title, posts.text, url, score, posts.timestamp, \
+              COUNT(cid) as commentCount, voted.type as voted, admins.uid as isAdmin, moderators.uid as isMod, \
+              CASE when users.uid= $2 then 'TRUE' else 'FALSE' END as isUser \
+              FROM posts \
+              LEFT JOIN Comments on Posts.pid = Comments.pid \
+              LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $2 \
+              LEFT JOIN Sub4ums on sub4ums.sname=posts.sname \
+              LEFT JOIN Admins on admins.sid=sub4ums.sid AND admins.uid = $2 \
+              LEFT JOIN Moderators on moderators.sid=sub4ums.sid AND moderators.uid = $2 \
+              LEFT JOIN Users on posts.username=users.username \
+              WHERE posts.username= $1 AND posts.sname in \
+              (SELECT sname FROM sub4ums WHERE type='public' OR EXISTS \
+              (SELECT * FROM subscribes WHERE uid = $2 AND subscribes.sname=sub4ums.sname)) \
+              GROUP BY posts.pid, voted.type, admins.uid, moderators.uid, users.uid \
+              ORDER BY SCORE DESC",
         values:[req.params.username, res.locals.user.uid]
     }
     pgClient.query(queryConfig , function(err, result) {
@@ -157,14 +175,17 @@ router.get('/username/:username', function(req, res, next) {
     })
 });
 
-    //Returns all rows from Posts
+  //Returns all rows from Posts
 router.get('/', function(req, res, next) {
   var queryConfig = {
-    text: "SELECT posts.pid, username, posts.sname, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted \
+    text: "SELECT posts.pid, username, posts.sname, title, posts.text, url, score, posts.timestamp, COUNT(cid) as commentCount, voted.type as voted, \
+          admins.uid as isAdmin, moderators.uid as isMod \
           FROM Posts INNER JOIN Subscribes on posts.sname=subscribes.sname AND subscribes.uid = $1 \
           LEFT JOIN Voted on Posts.pid = Voted.pid AND Voted.uid = $1 \
           LEFT JOIN Comments on Posts.pid = Comments.pid \
-          GROUP BY posts.pid, voted.type \
+          LEFT JOIN Admins on Admins.sid = Subscribes.sid AND Admins.uid = $1 \
+          LEFT JOIN Moderators on Moderators.sid = Subscribes.sid AND Moderators.uid = $1 \
+          GROUP BY posts.pid, voted.type, admins.uid, moderators.uid \
           ORDER BY score DESC",
     values: [res.locals.user.uid]
   }
@@ -193,14 +214,14 @@ router.post('/:sname', function(req, res, next) {
 });
 
     //Delete a post by pid
-router.delete('/', function(req, res, next) {
-    pgClient.query('DELETE FROM Posts WHERE pid=$1', [req.body.pid], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.sendStatus(HttpStatus.OK);
-        }
-    })
+router.delete('/:pid', function(req, res, next) {
+  pgClient.query('DELETE FROM Posts WHERE pid=$1', [req.params.pid], function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.sendStatus(HttpStatus.OK);
+    }
+  })
 })
 
 module.exports = router;

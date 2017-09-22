@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import update from 'immutability-helper';
+import TimeAgo from 'react-timeago'
 
 import './header.css';
 import './mainfeed.css';
@@ -17,6 +18,7 @@ class CommentForm extends Component {
     event.preventDefault();
     if(event.target.children[1].value !== '') {
       this.props.onSubmitCommentForm();
+      event.target.children[1].value = ''
     }
   }
 
@@ -32,6 +34,36 @@ class CommentForm extends Component {
   }
 }
 
+class CommentFeed extends Component {
+  constructor() {
+    super();
+    this.createComment = this.createComment.bind(this);
+  }
+
+  createComment(comment) {
+    var link = "/u/" + comment.username
+    return (
+      <li className="textDiv" key={comment.cid}>
+        <div className="commentHeader">
+          <a href= {link} className="author">{comment.username}</a> commented <TimeAgo date={(comment.timestamp)} live={false}/>
+        </div>
+        <div className="text">
+          {comment.text}
+        </div>
+      </li>
+    )
+  }
+
+  render() {
+    return (
+      <ul id="commentList">
+        {this.props.comments.map((comment, index) => (
+          this.createComment(comment)
+        ))}
+      </ul>
+    )
+  }
+}
 
 class PostPage extends Component {
   constructor() {
@@ -40,11 +72,14 @@ class PostPage extends Component {
     this.state = {
       forum: {},
       post: {},
-      commentForm: ''
+      commentForm: '',
+      comments: []
     }
     this.vote = this.vote.bind(this);
     this.onChangeCommentForm = this.onChangeCommentForm.bind(this);
     this.onSubmitCommentForm = this.onSubmitCommentForm.bind(this);
+    this.deletePost = this.deletePost.bind(this);
+
   }
 
   componentDidMount() {
@@ -61,6 +96,14 @@ class PostPage extends Component {
     })
     .then(res => res.json())
     .then(post => this.setState({post}))
+
+
+    fetch('/posts/comments/' + this.props.pid, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(res => res.json())
+    .then(comments => this.setState({comments}))
   }
 
   vote(type, value, voted, pid) {
@@ -102,13 +145,24 @@ class PostPage extends Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log(responseJson);
+      this.setState({
+        comments: [responseJson].concat(this.state.comments)
+      })
     })
     .catch((error) => {
       console.log(error);
     });
   }
 
+  deletePost(pid) {
+    fetch('/posts/' + pid, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    .then(() => {
+      window.location.href ="/home"
+    })
+  }
 
   render() {
     if(this.state.post.text !== '') {
@@ -136,11 +190,15 @@ class PostPage extends Component {
               voted={this.state.post.voted}
               showText={showText}
               text={this.state.post.text}
+              isAdmin={this.state.forum.isadmin}
+              isMod={this.state.forum.ismod}
+              deleteFunction={this.deletePost}
+
             />
           </ol>
           <div id="commentDiv">
               <CommentForm onChangeCommentForm={this.onChangeCommentForm} onSubmitCommentForm={this.onSubmitCommentForm}/>
-              <ul id="commentList"></ul>
+              <CommentFeed comments={this.state.comments} />
           </div>
         </div>
       </div>

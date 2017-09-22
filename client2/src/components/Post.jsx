@@ -46,6 +46,7 @@ class Post extends Component {
     this.props.voteFunction(type, value, voted, this.props.pid);
   }
 
+
   render() {
     var upvoteColor, scoreColor, downvoteColor;
     if(this.props.voted === 'upvote') {
@@ -69,6 +70,9 @@ class Post extends Component {
       url = "/s/" + this.props.sname + "/" + this.props.pid
     }
 
+    if(this.props.isAdmin|| this.props.isMod || this.props.isUser === 'TRUE') {
+      var deleteBtn = <li className="deleteBtn" onClick={() => this.props.deleteFunction(this.props.pid)}>delete</li>
+    }
     return (
       <li className="post" key={this.props.pid}>
         <div className="postNum">{this.props.postNum}</div>
@@ -91,7 +95,7 @@ class Post extends Component {
             <li className="comments">
               <a href={"/s/" + this.props.sname + "/" + this.props.pid}>{this.props.commentCount} comments</a>
             </li>
-            <li className="deleteBtn">delete</li>
+            {deleteBtn}
           </ul>
         </div>
       </li>

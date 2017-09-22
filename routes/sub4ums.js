@@ -153,32 +153,6 @@ router.delete('/subscribe', function(req, res, next) {
     })
 })
 
-//ADMINS
-
-    //Returns all rows from Admins that the logged in user is an Admin for.
-// router.get('/admin', function(req, res, next) {
-//     pgClient.query("SELECT * FROM Admins WHERE uid=$1", [res.locals.user.uid], function(err, result) {
-//         if(err) {
-//             console.log(err);
-//         } else {
-//             res.json(result.rows);
-//         }
-//     })
-// })
-
-//MODERATORS
-
-    //Returns all rows from Moderators that the logged in user is a Moderator for.
-// router.get('/mods', function(req, res, next) {
-//     pgClient.query("SELECT * FROM Moderators WHERE uid=$1", [res.locals.user.uid], function(err, result) {
-//         if(err) {
-//             console.log(err);
-//         } else {
-//             res.json(result.rows);
-//         }
-//     })
-// })
-
     //Returns all moderators for a SUB4UM by sid.
 router.get('/mods/:sid', function(req, res, next) {
     pgClient.query("SELECT Users.uid, sid, username FROM Moderators LEFT JOIN Users ON Moderators.uid = Users.uid WHERE sid=$1", [req.params.sid], function(err, result) {
@@ -238,13 +212,13 @@ router.get('/requests/:sid', function(req, res, next) {
 
     // Returns the inserted Requests row
 router.post('/request', function(req, res, next) {
-    pgClient.query('INSERT INTO requests(uid, sid, sname) VALUES ($1, $2, $3) RETURNING *', [res.locals.user.uid, req.body.sid, req.body.sname], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows[0]);
-        }
-    })
+  pgClient.query('INSERT INTO requests(uid, sid, sname) VALUES ($1, $2, $3) RETURNING *', [res.locals.user.uid, req.body.sid, req.body.sname], function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows[0]);
+    }
+  })
 })
 
     // Deletes a Request row by uid and sid.
@@ -267,29 +241,17 @@ router.delete('/requests/:uid/:sid', function(req, res, next) {
 
 //GENERAL ROUTES
 
-    //Returns if the user is either an Admin or Moderator for the specified SUB4UM.
-    //This is used to determine if they can delete posts.
-router.get('/qualified/:sname', function(req, res, next) {
-    var queryConfig = {
-        text: "SELECT EXISTS(SELECT * FROM (SELECT uid FROM Moderators left join sub4ums on moderators.sid = sub4ums.sid WHERE sub4ums.sname = $2 UNION ALL SELECT uid FROM Admins left join sub4ums on Admins.sid = sub4ums.sid WHERE sub4ums.sname = $2) AS A WHERE uid=$1)",
-        values: [res.locals.user.uid, req.params.sname]
-    };
-    pgClient.query(queryConfig, function(err, result) {
-        if(err) {
-            console.log(err)
-        } else {
-            if(result.rows[0].exists) {
-                res.json({qualified: true});
-            } else {
-                res.json({qualified: false});
-            }
-        }
-    })
-})
-
     //Returns a SUB4UM by SNAME
 router.get('/sname/:sname', function(req, res, next) {
-  pgClient.query("SELECT sid, description, sname, title, type FROM sub4ums WHERE sname=$1", [req.params.sname], function(err, result) {
+  var queryConfig = {
+    text: "SELECT sub4ums.sid, description, sname, title, type, admins.uid as isAdmin, moderators.uid as isMod \
+     FROM sub4ums \
+     LEFT JOIN admins on sub4ums.sid = admins.sid AND admins.uid = $2 \
+     LEFT JOIN moderators on sub4ums.sid = moderators.sid AND moderators.uid = $2 \
+     WHERE sname=$1",
+    values: [req.params.sname, res.locals.user.uid]
+  }
+  pgClient.query(queryConfig, function(err, result) {
     if(err) {
       console.log(err);
     } else {

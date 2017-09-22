@@ -4,7 +4,6 @@ import update from 'immutability-helper';
 import './header.css';
 import './mainfeed.css';
 
-
 import SideMenu from './SideMenu'
 import Post from './Post'
 import Sub4umModal from './Sub4umModal'
@@ -34,6 +33,7 @@ class Sub4um extends Component {
     this.onChangeTextForm = this.onChangeTextForm.bind(this);
     this.submitUrlForm = this.submitUrlForm.bind(this);
     this.onChangeUrlForm = this.onChangeUrlForm.bind(this);
+    this.deletePost = this.deletePost.bind(this);
   }
 
   componentDidMount() {
@@ -186,6 +186,19 @@ class Sub4um extends Component {
     })
   }
 
+  deletePost(pid) {
+    fetch('/posts/' + pid, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    .then(() => {
+      var index = this.state.posts.findIndex(post => post.pid === pid);
+      this.setState({
+        posts: update(this.state.posts, {$splice: [[index, 1]]})
+      })
+    })
+  }
+
   render() {
     if(this.state.posts.length === 0) {
       var noPosts = <div id="noPosts">There are no posts to display. Subscribe to more SUB4UMs or create your own post!</div>
@@ -242,6 +255,10 @@ class Sub4um extends Component {
                 commentCount={item.commentcount}
                 voteFunction={this.vote}
                 voted={item.voted}
+                isAdmin={item.isadmin}
+                isMod={item.ismod}
+                deleteFunction={this.deletePost}
+
               />
             ))}
           </ol>

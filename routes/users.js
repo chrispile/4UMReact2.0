@@ -6,6 +6,17 @@ var pgClient = pgSetup.getClient();
 var errorCodes = require('../errorCodes');
 var HttpStatus = require('http-status-codes')
 
+
+router.get('/check/isLoggedIn', function(req, res, next) {
+  pgClient.query("SELECT username FROM users WHERE uid = $1", [res.locals.user.uid], function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows[0]);
+    }
+  })
+})
+
 //Returns a User row by uid
 router.get('/:uid', function(req, res, next) {
     pgClient.query('SELECT * FROM USERS WHERE uid = $1', [req.params.uid], function(err, result) {
@@ -20,6 +31,25 @@ router.get('/:uid', function(req, res, next) {
         }
     });
 });
+
+router.get('/username/:username', function(req, res, next) {
+  var queryConfig = {
+    text: "SELECT users.username, users.joindate, count(posts.username) as totalPosts, sum(posts.score) as totalScore \
+          FROM users \
+          LEFT JOIN posts ON users.username=posts.username \
+          WHERE users.username= $1 \
+          GROUP BY users.username, users.joindate",
+    values: [req.params.username]
+  }
+  pgClient.query(queryConfig, function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows[0]);
+    }
+  })
+})
+
 
 //Returns all rows from Users
 router.get('/', function(req, res, next) {

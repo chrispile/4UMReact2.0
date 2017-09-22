@@ -22,6 +22,6 @@ module.exports = {
 				var toUser = '/inbox/u/' + message.touser;
 				socket.broadcast.to(toUser).emit('newMessage', message);
 			});
-	    });
+    });
 	}
 }

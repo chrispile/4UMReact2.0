@@ -9,7 +9,8 @@ import Login from './components/Login'
 import ForumList from './components/ForumList'
 import Sub4um from './components/Sub4um'
 import PostPage from './components/PostPage'
-
+import Profile from './components/Profile'
+import Inbox from './components/Inbox'
 
 class App extends Component {
   render() {
@@ -48,7 +49,22 @@ class App extends Component {
               </div>
             )
           }} />
-
+          <Route path="/u/:username" render={(props) => {
+            return (
+              <div>
+                <Header/>
+                <Profile username={props.match.params.username}/>
+              </div>
+            )
+          }} />
+          <Route path="/inbox" render={() => {
+            return(
+              <div>
+                <Header/>
+                <Inbox/>
+              </div>
+            )
+          }} />
         </Switch>
       </BrowserRouter>
     );

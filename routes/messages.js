@@ -7,13 +7,13 @@ var errorCodes = require('../errorCodes');
 
 //Returns all messages sent to the logged in User.
 router.get('/', function(req, res, next) {
-    pgClient.query('SELECT * FROM Messages WHERE touser=$1 ORDER BY timestamp', [res.locals.user.username], function(err, result) {
-        if(err) {
-            console.log(err);
-        } else {
-            res.json(result.rows);
-        }
-    });
+  pgClient.query('SELECT * FROM Messages WHERE touser=$1 ORDER BY timestamp', [res.locals.user.username], function(err, result) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.json(result.rows);
+    }
+  });
 });
 
 //Returns the inserted Message row

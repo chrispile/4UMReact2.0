@@ -6,131 +6,36 @@ import './mainfeed.css';
 
 import SideMenu from './SideMenu'
 import Post from './Post'
-import MainFeedModal from './MainFeedModal'
 
-class MainFeed extends Component {
+class Profile extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      sortedByScore: true,
       posts: [],
-      textForm: {
-        title: '',
-        text: '',
-        sname: ''
-      },
-      urlForm: {
-        url: '',
-        title: '',
-        sname: ''
-      }
+      user: {},
+      sortedByScore: true,
     }
-    this.resetForms = this.resetForms.bind(this);
+
     this.sortScore = this.sortScore.bind(this);
     this.sortDate = this.sortDate.bind(this);
-    this.submitTextForm = this.submitTextForm.bind(this);
-    this.onChangeTextForm = this.onChangeTextForm.bind(this);
-    this.submitUrlForm = this.submitUrlForm.bind(this);
-    this.onChangeUrlForm = this.onChangeUrlForm.bind(this);
     this.vote = this.vote.bind(this);
     this.deletePost = this.deletePost.bind(this);
   }
 
   componentDidMount() {
-    fetch('/posts', {
+    fetch('/posts/username/' + this.props.username, {
       method: 'GET',
       credentials: 'include'
     })
     .then(res => res.json())
     .then(posts => this.setState({posts}))
-  }
 
-  resetForms() {
-    this.setState({
-      textForm: {
-        title: '',
-        text: '',
-        sname: ''
-      },
-      urlForm: {
-        url: '',
-        title: '',
-        sname: ''
-      }
-    });
-  }
-
-  submitTextForm() {
-    fetch("/posts/" + this.state.textForm.sname, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: this.state.textForm.title,
-        text: this.state.textForm.text,
-        url: ''
-      })
+    fetch('/users/username/' + this.props.username, {
+      method: 'GET',
+      credentials: 'include'
     })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setState((prevState) => {
-        prevState.posts.push(responseJson)
-      })
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-  }
-
-  onChangeTextForm(event) {
-    var name = event.target.name;
-    var value = event.target.value;
-    this.setState({
-      textForm: update(this.state.textForm, {[name]: {$set: value}})
-    })
-  }
-
-  submitUrlForm() {
-    fetch("/posts/" + this.state.urlForm.sname, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: this.state.urlForm.title,
-        text: '',
-        url: this.state.urlForm.url
-      })
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setState((prevState) => {
-        prevState.posts.push(responseJson)
-      })
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-  }
-
-  onChangeUrlForm(event) {
-    var name = event.target.name;
-    var value = event.target.value;
-    if(name === 'url') {
-      var string = event.target.value;
-      if (!~string.indexOf("http")) {
-        string = "http://" + string;
-      }
-      value = string;
-    }
-    this.setState({
-      urlForm: update(this.state.urlForm, {[name]: {$set: value}})
-    })
+    .then(res => res.json())
+    .then(user =>this.setState({user}))
   }
 
   sortScore() {
@@ -214,18 +119,21 @@ class MainFeed extends Component {
       scoreStyle = unselectedStyle;
       dateStyle = selectedStyle;
     }
+
+    var date = new Date(this.state.user.joindate)
+    var options = {
+      weekday: "long", year: "numeric", month: "short",
+      day: "numeric", hour: "2-digit", minute: "2-digit"
+    };
+    var joindate = date.toLocaleTimeString("en-us", options);
+
     return (
       <div className="container">
-        <SideMenu title="Welcome to 4UM">
-          <MainFeedModal
-            resetForms={this.resetForms}
-            onTextSubmit={this.submitTextForm}
-            onChangeTextForm={this.onChangeTextForm}
-            onUrlSubmit={this.submitUrlForm}
-            onChangeUrlForm={this.onChangeUrlForm}
-          />
+        <SideMenu title={this.props.username}>
+          <h6>Member since {joindate}</h6>
+          <h6>Total # of posts: {this.state.user.totalposts}</h6>
+          <h6>Total score: {this.state.user.totalscore}</h6>
         </SideMenu>
-
         <div className="feed">
           <div id="sort">
             <button className="sortBtn" id="topBtn" onClick={this.sortScore} style={scoreStyle}>Top</button>
@@ -250,6 +158,7 @@ class MainFeed extends Component {
                 isAdmin={item.isadmin}
                 isMod={item.ismod}
                 deleteFunction={this.deletePost}
+                isUser={item.isuser}
               />
             ))}
           </ol>
@@ -259,4 +168,4 @@ class MainFeed extends Component {
   }
 }
 
-export default MainFeed;
+export default Profile
